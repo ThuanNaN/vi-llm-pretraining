@@ -1,0 +1,21 @@
+input_dir: data/deduped
+output_dir: artifacts/tokenizer
+hf_repo: null           # set to "your-hf-username/vi-llm-tokenizer" to enable push
+
+# Sampling: how much text to use for tokenizer training
+max_train_chars: 10_000_000_000   # 10 GB
+
+# BPE settings
+vocab_size: 65536
+min_frequency: 2
+special_tokens:
+  - "<s>"
+  - "</s>"
+  - "<pad>"
+  - "<unk>"
+
+# Normalisation applied before BPE
+normalizer: NFC          # NFC | NFD | NFKC | NFKD | null
+
+# Pre-tokeniser
+pre_tokenizer: ByteLevel # ByteLevel handles all Unicode (including Vietnamese)

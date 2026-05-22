@@ -1,0 +1,37 @@
+# Each entry maps to one HuggingFace dataset.
+# The loader extracts `text_columns`, concatenates them into a single `text`
+# field, and drops all other columns — so any HF dataset works without code
+# changes regardless of its original schema.
+
+datasets:
+  - id: th1nhng0/vietnamese-legal-documents
+    name: null          # dataset config/subset name (null = default)
+    split: train
+    text_columns: [text]
+    weight: 1.0         # relative sampling weight when mixing multiple datasets
+    max_docs: null      # null = use all documents; set an int for smoke tests
+
+  # Uncomment to add more datasets — same schema, no code changes needed:
+  # - id: uonlp/CulturaX
+  #   name: vi
+  #   split: train
+  #   text_columns: [text]
+  #   weight: 0.5
+  #   max_docs: null
+
+  # - id: wikimedia/wikipedia
+  #   name: 20231101.vi
+  #   split: train
+  #   text_columns: [title, text]   # multiple columns are joined with \n\n
+  #   weight: 0.3
+  #   max_docs: null
+
+  # - id: allenai/c4
+  #   name: vi
+  #   split: train
+  #   text_columns: [text]
+  #   weight: 0.4
+  #   max_docs: null
+
+output_dir: data/raw
+shard_size: 10000       # documents per Arrow shard file

@@ -1,0 +1,21 @@
+# Multi-GPU FSDP config — CUDA only (requires NCCL).
+# Set num_processes to the number of GPUs on the node.
+compute_environment: LOCAL_MACHINE
+distributed_type: FSDP
+fsdp_config:
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  fsdp_backward_prefetch_policy: BACKWARD_PRE
+  fsdp_offload_params: false
+  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_state_dict_type: FULL_STATE_DICT
+  fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
+machine_rank: 0
+main_process_ip: null
+main_process_port: null
+main_training_function: main
+mixed_precision: no   # handled in code — trainer.py resolves dtype per device
+num_machines: 1
+num_processes: 4      # set to GPU count (e.g. 4 for 4×A100)
+rdzv_backend: static
+same_network: true
+use_cpu: false

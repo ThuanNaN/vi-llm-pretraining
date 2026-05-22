@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+.uv/
+
+# Data (large, do not commit)
+data/
+artifacts/tokenizer/
+artifacts/checkpoints/
+
+# Env / secrets
+.env
+*.env
+
+# Weights & Biases
+wandb/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

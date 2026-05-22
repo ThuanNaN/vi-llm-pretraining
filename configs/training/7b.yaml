@@ -1,0 +1,44 @@
+# ── Model architecture (LLaMA-style 7B) ──────────────────────────────────────
+model:
+  hidden_size: 4096
+  num_hidden_layers: 32
+  num_attention_heads: 32
+  num_key_value_heads: 8        # GQA
+  intermediate_size: 11008      # ~2.7x hidden_size (SwiGLU)
+  max_position_embeddings: 2048
+  rms_norm_eps: 1.0e-5
+  rope_theta: 10000.0
+  attn_implementation: auto     # auto | sdpa | flash_attention_2 (CUDA only) | eager
+
+# ── Speed-ups ─────────────────────────────────────────────────────────────────
+compile: true
+gradient_checkpointing: true
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+data:
+  packed_dir: data/packed
+  tokenizer_dir: artifacts/tokenizer
+  seq_length: 2048
+
+# ── Training hyperparams ─────────────────────────────────────────────────────
+training:
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 16
+  num_train_steps: 250000
+  warmup_steps: 5000
+  learning_rate: 1.5e-4
+  lr_scheduler: cosine
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  dtype: auto                       # auto | bf16 | fp16 | fp32
+
+# ── Checkpointing ────────────────────────────────────────────────────────────
+checkpoint:
+  output_dir: artifacts/checkpoints/7b
+  save_every_steps: 500
+  hf_repo: null                     # "username/vi-llm-7b" to auto-push
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  wandb_project: vi-llm-pretrain
+  log_every_steps: 10
