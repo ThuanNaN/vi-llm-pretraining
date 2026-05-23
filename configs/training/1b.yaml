@@ -8,7 +8,7 @@ model:
   max_position_embeddings: 2048
   rms_norm_eps: 1.0e-5
   rope_theta: 10000.0
-  attn_implementation: auto     # auto | sdpa | flash_attention_2 (CUDA only) | eager
+  attn_implementation: flash_attention_2
 
 # ── Speed-ups ─────────────────────────────────────────────────────────────────
 compile: false                  # torch.compile (PyTorch 2.x)
