@@ -21,7 +21,8 @@ def download_all(config_path: str) -> None:
     import datasets as hf_datasets
 
     with open(config_path) as f:
-        cfg = yaml.safe_load(f)
+        top = yaml.safe_load(f)
+    cfg = top.get("download", top)
 
     output_dir = Path(cfg["output_dir"])
     shard_size = cfg.get("shard_size", 10_000)

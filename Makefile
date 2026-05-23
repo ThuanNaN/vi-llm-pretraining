@@ -20,13 +20,13 @@ install-cuda:
 # ── Data pipeline ─────────────────────────────────────────────────────────────
 
 download:
-	$(PYTHON) $(SCRIPTS)/01_download.py --config $(CONFIGS)/datasets.yaml
+	$(PYTHON) $(SCRIPTS)/01_download.py --config $(CONFIGS)/dataprep.yaml
 
 clean-data:
-	$(PYTHON) $(SCRIPTS)/02_clean.py --config $(CONFIGS)/cleaning.yaml
+	$(PYTHON) $(SCRIPTS)/02_clean.py --config $(CONFIGS)/dataprep.yaml
 
 dedup:
-	$(PYTHON) $(SCRIPTS)/03_dedup.py
+	$(PYTHON) $(SCRIPTS)/03_dedup.py --config $(CONFIGS)/dataprep.yaml
 
 tokenizer:
 	$(PYTHON) $(SCRIPTS)/04_train_tokenizer.py --config $(CONFIGS)/tokenizer.yaml

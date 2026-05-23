@@ -223,7 +223,8 @@ def clean_dataset(config_path: str) -> None:
     from vi_llm.dataprep.utils import is_done, mark_done
 
     with open(config_path) as f:
-        cfg_dict = yaml.safe_load(f)
+        top = yaml.safe_load(f)
+    cfg_dict = top.get("clean", top)
 
     input_dir = Path(cfg_dict["input_dir"])
     output_dir = Path(cfg_dict["output_dir"])

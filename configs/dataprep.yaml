@@ -1,0 +1,56 @@
+# ── Stage 1: Download ─────────────────────────────────────────────────────────
+download:
+  output_dir: data/raw
+  shard_size: 10000
+  datasets:
+    - id: th1nhng0/vietnamese-legal-documents
+      name: content
+      split: data
+      weight: 0.1
+      max_docs: null
+
+    # - id: vietgpt/wikipedia_vi
+    #   split: train
+    #   weight: 0.1
+    #   max_docs: null
+
+# ── Stage 2: Clean ────────────────────────────────────────────────────────────
+clean:
+  input_dir: data/raw
+  output_dir: data/cleaned
+  shard_size: 10000
+  num_workers: 8
+
+  filters:
+    language_id:
+      enabled: true
+      language: vi
+      min_confidence: 0.7
+    length:
+      enabled: true
+      min_chars: 50
+      max_chars: 100000
+    non_alphanum_ratio:
+      enabled: true
+      max_ratio: 0.3
+    repeated_char_ratio:
+      enabled: true
+      max_ratio: 0.2
+
+  transformations:
+    strip_html: true
+    normalize_unicode: true
+    normalize_whitespace: true
+    strip_urls: false
+    word_segment:
+      enabled: false
+      save_dir: artifacts/vncorenlp
+
+# ── Stage 3: Dedup ────────────────────────────────────────────────────────────
+dedup:
+  input_dir: data/cleaned
+  output_dir: data/deduped
+  shard_size: 10000
+  num_workers: 8
+  threshold: 0.85
+  num_perm: 128
