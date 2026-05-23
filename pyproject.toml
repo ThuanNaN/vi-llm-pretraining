@@ -11,6 +11,7 @@ dependencies = [
     "tokenizers>=0.19",
     "datasketch>=1.6",
     "fasttext-wheel>=0.9.2",
+    "flash-attn>=2.5",
     "pyyaml>=6.0",
     "rich>=13.0",
     "wandb>=0.17",
@@ -20,7 +21,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-flash = ["flash-attn>=2.5"]         # CUDA only: uv pip install -e ".[flash]"
 cuda  = ["deepspeed>=0.14"]         # Linux/CUDA only: uv pip install -e ".[cuda]"
 
 [build-system]

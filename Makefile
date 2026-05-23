@@ -1,4 +1,4 @@
-.PHONY: install install-flash install-cuda download clean-data dedup tokenizer \
+.PHONY: install install-cuda download clean-data dedup tokenizer \
         tokenize train-1b train-7b train-1b-fsdp train-7b-fsdp \
         pipeline push-tokenizer push-checkpoint test
 
@@ -10,9 +10,6 @@ CONFIGS := configs
 
 install:
 	uv pip install -e .
-
-install-flash:
-	uv pip install -e ".[flash]"      # CUDA only — Flash Attention 2
 
 install-cuda:
 	uv pip install -e ".[cuda]"       # Linux/CUDA only — adds DeepSpeed
