@@ -22,8 +22,8 @@ data:
 
 # ── Training hyperparams ─────────────────────────────────────────────────────
 training:
-  per_device_batch_size: 2
-  gradient_accumulation_steps: 16
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 8
   num_train_steps: 250000
   warmup_steps: 5000
   learning_rate: 1.5e-4
@@ -36,9 +36,9 @@ training:
 checkpoint:
   output_dir: artifacts/checkpoints/7b
   save_every_steps: 500
-  hf_repo: null                     # "username/vi-llm-7b" to auto-push
+  hf_repo: thuanan/vi-llm-pretrain-7b
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:
   wandb_project: vi-llm-pretrain
-  log_every_steps: 10
+  log_every_steps: 1
