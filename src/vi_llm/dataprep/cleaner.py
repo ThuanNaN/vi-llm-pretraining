@@ -128,7 +128,9 @@ class TextCleaner:
         model_path = Path(self._cfg.language_id_model_path)
         if not model_path.exists():
             _download_fasttext_model(model_path)
-        self._ft_model = fasttext.load_model(str(model_path))
+        import contextlib, io
+        with contextlib.redirect_stderr(io.StringIO()):
+            self._ft_model = fasttext.load_model(str(model_path))
 
     def _load_vncorenlp(self) -> None:
         import py_vncorenlp
@@ -218,7 +220,7 @@ def clean_dataset(config_path: str) -> None:
     import datasets as hf_datasets
     import yaml
 
-    from vi_llm.data.utils import is_done, mark_done
+    from vi_llm.dataprep.utils import is_done, mark_done
 
     with open(config_path) as f:
         cfg_dict = yaml.safe_load(f)

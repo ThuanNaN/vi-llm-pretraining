@@ -1,6 +1,6 @@
 """Unit tests for MinHash deduplication helpers."""
 
-from vi_llm.data.dedup import _make_minhash, _shingles
+from vi_llm.dataprep.dedup import _make_minhash, _shingles
 
 
 def test_shingles_basic():

@@ -3,7 +3,7 @@
 
 import argparse
 
-from vi_llm.data.loader import download_all
+from vi_llm.dataprep.loader import download_all
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

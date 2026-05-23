@@ -7,7 +7,7 @@ dist/
 .uv/
 
 # Data (large, do not commit)
-/data/
+data/
 artifacts/tokenizer/
 artifacts/checkpoints/
 

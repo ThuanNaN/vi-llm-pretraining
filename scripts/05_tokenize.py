@@ -5,7 +5,7 @@ import argparse
 
 import yaml
 
-from vi_llm.data.packer import pack_dataset
+from vi_llm.dataprep.packer import pack_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

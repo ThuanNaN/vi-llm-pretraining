@@ -3,7 +3,7 @@
 Reads parquet files directly via pyarrow + HfFileSystem to avoid the
 large_string → string cast error that occurs in the datasets streaming path.
 
-Row → text normalisation is handled by vi_llm.data.converters (priority 1)
+Row → text normalisation is handled by vi_llm.dataprep.converters (priority 1)
 or by text_columns in configs/datasets.yaml (priority 2).
 """
 
@@ -13,8 +13,8 @@ from pathlib import Path
 
 import yaml
 
-from vi_llm.data.converters import get as get_converter
-from vi_llm.data.utils import is_done, mark_done
+from vi_llm.dataprep.converters import get as get_converter
+from vi_llm.dataprep.utils import is_done, mark_done
 
 
 def download_all(config_path: str) -> None:

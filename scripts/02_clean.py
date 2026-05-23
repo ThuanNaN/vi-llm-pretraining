@@ -3,7 +3,7 @@
 
 import argparse
 
-from vi_llm.data.cleaner import clean_dataset
+from vi_llm.dataprep.cleaner import clean_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
