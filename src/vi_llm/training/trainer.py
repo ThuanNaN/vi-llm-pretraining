@@ -1,9 +1,4 @@
-"""Accelerate-based pre-training loop.
-
-Runs on CUDA (single or multi-GPU via FSDP) and Apple Silicon MPS
-with no manual config switching — device, dtype, and attention
-implementation are resolved automatically at startup.
-"""
+"""Accelerate-based pre-training loop. Requires CUDA + Flash Attention 2."""
 
 from __future__ import annotations
 
@@ -23,47 +18,13 @@ import wandb
 from .callbacks import push_checkpoint_to_hub, save_checkpoint
 
 
-# ── Device / dtype helpers ────────────────────────────────────────────────────
+# ── dtype helper ──────────────────────────────────────────────────────────────
 
-def detect_device() -> str:
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
-
-
-def resolve_dtype(dtype_cfg: str, device: str) -> str:
-    """Translate config dtype (possibly 'auto') to a concrete Accelerate value.
-
-    Accelerate accepts: 'no' (fp32), 'fp16', 'bf16'.
-    """
+def resolve_dtype(dtype_cfg: str) -> str:
+    """Translate config dtype (possibly 'auto') to a concrete Accelerate value."""
     if dtype_cfg != "auto":
-        # fp32 is spelled 'no' in Accelerate's mixed_precision API
         return "no" if dtype_cfg == "fp32" else dtype_cfg
-
-    if device == "cuda":
-        # bf16 is available on Ampere+ (A100, RTX 3xxx+); safe default for modern GPUs
-        return "bf16" if torch.cuda.is_bf16_supported() else "fp16"
-    if device == "mps":
-        # MPS does not support bf16 reliably; fp32 is the safe choice
-        return "no"
-    return "no"  # CPU
-
-
-def resolve_attn_impl(impl_cfg: str, device: str) -> str:
-    """Translate 'auto' attention implementation to a concrete value."""
-    if impl_cfg != "auto":
-        return impl_cfg
-
-    if device == "cuda":
-        try:
-            import flash_attn  # noqa: F401
-            return "flash_attention_2"
-        except ImportError:
-            return "sdpa"
-    # MPS and CPU both support PyTorch's scaled_dot_product_attention
-    return "sdpa"
+    return "bf16" if torch.cuda.is_bf16_supported() else "fp16"
 
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
@@ -86,11 +47,12 @@ class PackedArrowDataset(IterableDataset):
 
 # ── Model factory ─────────────────────────────────────────────────────────────
 
-def build_model(model_cfg: dict, device: str) -> LlamaForCausalLM:
-    attn_impl = resolve_attn_impl(
-        model_cfg.get("attn_implementation", "auto"), device
-    )
+def build_model(model_cfg: dict, mixed_precision: str) -> LlamaForCausalLM:
+    dtype_map = {"bf16": torch.bfloat16, "fp16": torch.float16}
+    torch_dtype = dtype_map.get(mixed_precision, torch.bfloat16)
+
     config = LlamaConfig(
+        vocab_size=model_cfg.get("vocab_size", 32000),
         hidden_size=model_cfg["hidden_size"],
         num_hidden_layers=model_cfg["num_hidden_layers"],
         num_attention_heads=model_cfg["num_attention_heads"],
@@ -98,11 +60,32 @@ def build_model(model_cfg: dict, device: str) -> LlamaForCausalLM:
         intermediate_size=model_cfg["intermediate_size"],
         max_position_embeddings=model_cfg.get("max_position_embeddings", 2048),
         rms_norm_eps=model_cfg.get("rms_norm_eps", 1e-5),
-        rope_theta=model_cfg.get("rope_theta", 10000.0),
-        attn_implementation=attn_impl,
+        rope_parameters={"rope_type": "default", "rope_theta": model_cfg.get("rope_theta", 10000.0)},
+        attention_dropout=model_cfg.get("attention_dropout", 0.0),
+        attention_bias=model_cfg.get("attention_bias", False),
+        mlp_bias=model_cfg.get("mlp_bias", False),
+        tie_word_embeddings=model_cfg.get("tie_word_embeddings", False),
+        bos_token_id=model_cfg.get("bos_token_id", 1),
+        eos_token_id=model_cfg.get("eos_token_id", 2),
+        pad_token_id=model_cfg.get("pad_token_id", None),
+        attn_implementation="flash_attention_2",
+        torch_dtype=torch_dtype,
     )
-    return LlamaForCausalLM(config)
 
+    # Build directly under target dtype so weights are initialized in bf16/fp16.
+    prev_dtype = torch.get_default_dtype()
+    try:
+        torch.set_default_dtype(torch_dtype)
+        model = LlamaForCausalLM(config)
+    finally:
+        torch.set_default_dtype(prev_dtype)
+
+    model = model.to(dtype=torch_dtype)
+
+    # For training with gradient checkpointing / FSDP.
+    model.config.use_cache = False
+
+    return model
 
 # ── Scheduler ─────────────────────────────────────────────────────────────────
 
@@ -124,8 +107,7 @@ def train(config_path: str) -> None:
     ckpt_cfg = cfg["checkpoint"]
     log_cfg = cfg["logging"]
 
-    device = detect_device()
-    mixed_precision = resolve_dtype(train_cfg.get("dtype", "auto"), device)
+    mixed_precision = resolve_dtype(train_cfg.get("dtype", "auto"))
 
     accelerator = Accelerator(
         mixed_precision=mixed_precision,
@@ -133,10 +115,17 @@ def train(config_path: str) -> None:
     )
 
     if accelerator.is_main_process:
-        print(f"[device={device}  mixed_precision={mixed_precision}]")
-        wandb.init(project=log_cfg.get("wandb_project", "vi-llm-pretrain"))
+        print(f"[mixed_precision={mixed_precision}]")
+        wandb.init(
+            project=log_cfg.get("wandb_project", "vi-llm-pretrain"),
+            mode=os.environ.get("WANDB_MODE", "offline"),
+        )
 
-    model = build_model(model_cfg, device)
+    from transformers import PreTrainedTokenizerFast
+    tokenizer = PreTrainedTokenizerFast.from_pretrained(data_cfg["tokenizer_dir"])
+    model_cfg = {**model_cfg, "vocab_size": tokenizer.vocab_size}
+
+    model = build_model(model_cfg, mixed_precision)
 
     if cfg.get("gradient_checkpointing", True):
         model.gradient_checkpointing_enable()
@@ -158,8 +147,7 @@ def train(config_path: str) -> None:
         model, optimizer, dataloader, scheduler
     )
 
-    # torch.compile has limited MPS support — skip on non-CUDA
-    if cfg.get("compile", False) and device == "cuda":
+    if cfg.get("compile", False):
         model = torch.compile(model)
 
     output_dir = ckpt_cfg["output_dir"]
