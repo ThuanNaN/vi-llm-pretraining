@@ -6,7 +6,7 @@ compute_environment: LOCAL_MACHINE
 distributed_type: NO
 machine_rank: 0
 main_training_function: main
-mixed_precision: no   # handled in code — trainer.py resolves dtype per device
+mixed_precision: "no"   # handled in code — trainer.py resolves dtype per device
 num_machines: 1
 num_processes: 1
 use_cpu: false

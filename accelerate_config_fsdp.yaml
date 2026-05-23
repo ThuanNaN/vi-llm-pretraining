@@ -13,9 +13,9 @@ machine_rank: 0
 main_process_ip: null
 main_process_port: null
 main_training_function: main
-mixed_precision: no   # handled in code — trainer.py resolves dtype per device
+mixed_precision: "no"   # handled in code — trainer.py resolves dtype per device
 num_machines: 1
-num_processes: 4      # set to GPU count (e.g. 4 for 4×A100)
+num_processes: 3
 rdzv_backend: static
 same_network: true
 use_cpu: false
