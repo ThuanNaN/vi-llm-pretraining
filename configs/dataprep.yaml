@@ -53,4 +53,4 @@ dedup:
   shard_size: 10000
   num_workers: 8
   threshold: 0.85
-  num_perm: 128
+  num_perm: 64

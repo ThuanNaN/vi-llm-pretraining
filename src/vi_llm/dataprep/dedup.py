@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import numpy as np
+
 
 
 def _shingles(text: str, n: int = 5) -> set[str]:
@@ -12,23 +14,34 @@ def _shingles(text: str, n: int = 5) -> set[str]:
     return {text[i : i + n] for i in range(len(text) - n + 1)}
 
 
-def _make_minhash(text: str, num_perm: int = 128):
+def _hashvalues(text: str, num_perm: int) -> "np.ndarray":
+    """Return MinHash hashvalues (uint32 array of shape num_perm) for one document.
+
+    Returns only the raw numpy array — not a MinHash object — so the worker
+    can send a single stacked array over IPC instead of thousands of Python
+    objects with large _hash_ranges tuples attached.
+    """
     from datasketch import MinHash
     m = MinHash(num_perm=num_perm)
     for shingle in _shingles(text):
         m.update(shingle.encode("utf-8"))
-    return m
+    return m.hashvalues.copy()
 
 
 # ── Parallel worker ────────────────────────────────────────────────────────────
 
-def _minhash_shard(args: tuple[str, int]) -> tuple[list[str], list, int]:
-    """Load one shard and compute MinHash for every document."""
+def _minhash_shard(args: tuple[str, int]) -> tuple[list[str], "np.ndarray", int]:
+    """Load one shard and return (texts, hashvalues_array, n_docs).
+
+    hashvalues_array has shape (n_docs, num_perm) dtype uint32.
+    Sending one ndarray over IPC is ~100x cheaper than pickling MinHash objects.
+    """
+    import numpy as np
     import datasets as hf_datasets
     shard_dir, num_perm = args
     texts: list[str] = hf_datasets.load_from_disk(shard_dir)["text"]
-    minhashes = [_make_minhash(t, num_perm) for t in texts]
-    return texts, minhashes, len(texts)
+    arr = np.stack([_hashvalues(t, num_perm) for t in texts])
+    return texts, arr, len(texts)
 
 
 # ── Public entry points ────────────────────────────────────────────────────────
@@ -80,6 +93,7 @@ def dedup_dataset(config_path: str) -> None:
         )
         shard_results = executor.map(_minhash_shard, args)
 
+    from datasketch import MinHash as _MinHash
     lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
     shard_idx = 0
     buffer: list[str] = []
@@ -87,13 +101,15 @@ def dedup_dataset(config_path: str) -> None:
 
     try:
         with tqdm(total=len(shard_dirs), desc="Deduplicating shards", unit="shard") as pbar:
-            for texts, minhashes, n_in in shard_results:
+            for texts, hashvalues_arr, n_in in shard_results:
                 total_in += n_in
-                for text, minhash in zip(texts, minhashes):
+                for text, hv in zip(texts, hashvalues_arr):
                     key = f"d{doc_id}"
                     doc_id += 1
-                    if not lsh.query(minhash):
-                        lsh.insert(key, minhash)
+                    m = _MinHash(num_perm=num_perm)
+                    m.hashvalues = hv
+                    if not lsh.query(m):
+                        lsh.insert(key, m)
                         buffer.append(text)
                         total_out += 1
                         if len(buffer) >= shard_size:
