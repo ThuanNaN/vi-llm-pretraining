@@ -11,7 +11,7 @@ model:
   attn_implementation: flash_attention_2
 
 # ── Speed-ups ─────────────────────────────────────────────────────────────────
-compile: false                  # torch.compile (PyTorch 2.x)
+compile: true                  # torch.compile (PyTorch 2.x)
 gradient_checkpointing: true
 
 # ── Data ─────────────────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ training:
   lr_scheduler: cosine
   weight_decay: 0.1
   max_grad_norm: 1.0
-  dtype: auto                       # auto | bf16 | fp16 | fp32
+  dtype: bf16                        # auto | bf16 | fp16 | fp32
 
 # ── Checkpointing ────────────────────────────────────────────────────────────
 checkpoint:
