@@ -110,7 +110,7 @@ def train(config_path: str) -> None:
     mixed_precision = resolve_dtype(train_cfg.get("dtype", "auto"))
 
     accelerator = Accelerator(
-        mixed_precision=mixed_precision,
+        mixed_precision="no",  # dtype handled in code via build_model; avoids FSDP param upcasting
         gradient_accumulation_steps=train_cfg.get("gradient_accumulation_steps", 1),
     )
 
