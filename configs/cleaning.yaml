@@ -1,6 +1,7 @@
 input_dir: data/raw
 output_dir: data/cleaned
 shard_size: 10000
+num_workers: 8        # parallel shard workers (set to cpu count or 1 to disable)
 
 filters:
   # Language identification (fasttext)
@@ -30,3 +31,6 @@ transformations:
   normalize_unicode: true    # NFC normalisation for Vietnamese diacritics
   normalize_whitespace: true
   strip_urls: false          # set true to remove all URLs
+  word_segment:
+    enabled: false           # Vietnamese word segmentation via VnCoreNLP (py_vncorenlp required)
+    save_dir: artifacts/vncorenlp
