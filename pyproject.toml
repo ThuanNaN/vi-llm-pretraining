@@ -15,6 +15,7 @@ dependencies = [
     "rich>=13.0",
     "wandb>=0.17",
     "huggingface_hub>=0.23",
+    "tqdm>=4.66",
     "pytest>=8.0",
 ]
 
