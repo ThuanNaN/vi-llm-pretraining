@@ -19,7 +19,7 @@ clean:
   input_dir: data/raw
   output_dir: data/cleaned
   shard_size: 10000
-  num_workers: 8
+  num_workers: 16
 
   filters:
     language_id:
@@ -51,6 +51,6 @@ dedup:
   input_dir: data/cleaned
   output_dir: data/deduped
   shard_size: 10000
-  num_workers: 8
-  threshold: 0.85
-  num_perm: 64
+  num_workers: 16
+  threshold: 0.9
+  num_perm: 128

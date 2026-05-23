@@ -1,6 +1,6 @@
 input_dir: data/deduped
 output_dir: artifacts/tokenizer
-num_workers: 8
+num_workers: 16
 hf_repo: thuanan/vi-llm-pretrain-tokenizer
 
 # Sampling: how much text to use for tokenizer training
