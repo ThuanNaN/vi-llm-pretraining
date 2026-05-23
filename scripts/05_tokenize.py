@@ -23,4 +23,5 @@ if __name__ == "__main__":
         input_dir=args.input_dir,
         output_dir=args.output_dir,
         seq_length=args.seq_length,
+        num_workers=cfg["num_workers"],
     )
