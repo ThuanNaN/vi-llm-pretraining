@@ -1,6 +1,7 @@
 input_dir: data/deduped
 output_dir: artifacts/tokenizer
-hf_repo: null           # set to "your-hf-username/vi-llm-tokenizer" to enable push
+num_workers: 8
+hf_repo: thuanan/vi-llm-pretrain-tokenizer
 
 # Sampling: how much text to use for tokenizer training
 max_train_chars: 10_000_000_000   # 10 GB
