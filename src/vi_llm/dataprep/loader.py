@@ -90,35 +90,78 @@ def _download_dataset(entry: dict, output_dir: Path, shard_size: int, hf_dataset
         print(f"Skipping {dataset_id} — already downloaded at {dataset_dir}")
         return
 
+    from tqdm import tqdm
+
     print(f"Downloading {dataset_id} (split={split}, name={name}) ...")
 
     fs = HfFileSystem()
     pa_filesystem = pa_fs.PyFileSystem(pa_fs.FSSpecHandler(fs))
-    files = _find_parquet_files(fs, dataset_id, name, split)
-
-    # Read only the needed columns when falling back to text_columns config.
-    # With a registered converter we read all columns (it decides what to use).
-    read_columns = text_columns if converter is None else None
+    try:
+        files = _find_parquet_files(fs, dataset_id, name, split)
+        use_fallback = False
+    except FileNotFoundError:
+        use_fallback = True
 
     shard_idx = 0
     buffer: list[str] = []
     total = 0
     done = False
 
-    for file_path in files:
-        if done:
-            break
-        pf = pq.ParquetFile(file_path, filesystem=pa_filesystem)
-        for batch in pf.iter_batches(batch_size=500, columns=read_columns):
-            if done:
-                break
-            col_arrays = {col: batch.column(col) for col in batch.schema.names}
-            for i in range(batch.num_rows):
-                if max_docs is not None and total >= max_docs:
-                    done = True
-                    break
+    if not use_fallback:
+        # Read only the needed columns when falling back to text_columns config.
+        # With a registered converter we read all columns (it decides what to use).
+        read_columns = text_columns if converter is None else None
 
-                row = {col: arr[i].as_py() for col, arr in col_arrays.items()}
+        with tqdm(files, desc=f"  Files [{dataset_id}]", unit="file") as file_pbar:
+            for file_path in file_pbar:
+                if done:
+                    break
+                pf = pq.ParquetFile(file_path, filesystem=pa_filesystem)
+                num_row_groups = pf.metadata.num_row_groups
+                with tqdm(
+                    pf.iter_batches(batch_size=500, columns=read_columns),
+                    desc=f"    {file_path.split('/')[-1]}",
+                    unit="batch",
+                    total=num_row_groups,
+                    leave=False,
+                ) as batch_pbar:
+                    for batch in batch_pbar:
+                        if done:
+                            break
+                        col_arrays = {col: batch.column(col) for col in batch.schema.names}
+                        for i in range(batch.num_rows):
+                            if max_docs is not None and total >= max_docs:
+                                done = True
+                                break
+
+                            row = {col: arr[i].as_py() for col, arr in col_arrays.items()}
+
+                            if converter is not None:
+                                text = converter(row)
+                            else:
+                                parts = [str(row[col]) for col in (text_columns or []) if row.get(col)]
+                                text = "\n\n".join(parts) or None
+
+                            if not text or not text.strip():
+                                continue
+
+                            buffer.append(text)
+                            total += 1
+
+                            if len(buffer) >= shard_size:
+                                _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)
+                                shard_idx += 1
+                                buffer = []
+
+                        batch_pbar.set_postfix(docs=total, shards=shard_idx)
+                file_pbar.set_postfix(docs=total, shards=shard_idx)
+    else:
+        print(f"  Parquet files not found. Falling back to HF datasets.load_dataset for '{dataset_id}'...")
+        ds = hf_datasets.load_dataset(dataset_id, name, split=split)
+        with tqdm(ds, desc=f"  Processing [{dataset_id}]", unit="doc") as pbar:
+            for row in pbar:
+                if max_docs is not None and total >= max_docs:
+                    break
 
                 if converter is not None:
                     text = converter(row)
@@ -136,6 +179,7 @@ def _download_dataset(entry: dict, output_dir: Path, shard_size: int, hf_dataset
                     _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)
                     shard_idx += 1
                     buffer = []
+                pbar.set_postfix(docs=total, shards=shard_idx)
 
     if buffer:
         _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)
