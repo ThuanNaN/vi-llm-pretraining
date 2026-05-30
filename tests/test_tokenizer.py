@@ -17,6 +17,9 @@ def _build_tiny_tokenizer() -> Tokenizer:
         "Lập trình viên Python",
         "Học máy và trí tuệ nhân tạo",
         "Ngôn ngữ lớn được huấn luyện trước",
+        "Hôm nay trời rất đẹp",
+        "Lập trình bằng Python rất thú vị",
+        "Học máy là lĩnh vực phát triển nhanh",
     ] * 20  # repeat to get enough frequency
 
     special_tokens = ["<s>", "</s>", "<pad>", "<unk>"]
