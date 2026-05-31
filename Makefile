@@ -49,11 +49,11 @@ train-7b:
 # Edit accelerate_config_fsdp.yaml to set num_processes = GPU count.
 
 train-1b-fsdp:
-	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 accelerate launch --config_file accelerate_config_fsdp.yaml \
+	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 NCCL_SOCKET_IFNAME=enp5s0 accelerate launch --config_file accelerate_config_fsdp.yaml \
 		$(SCRIPTS)/06_train.py --config $(CONFIGS)/training/1b.yaml
 
 train-7b-fsdp:
-	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 accelerate launch --config_file accelerate_config_fsdp.yaml \
+	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 NCCL_SOCKET_IFNAME=enp5s0 accelerate launch --config_file accelerate_config_fsdp.yaml \
 		$(SCRIPTS)/06_train.py --config $(CONFIGS)/training/7b.yaml
 
 # ── HF Hub ────────────────────────────────────────────────────────────────────
