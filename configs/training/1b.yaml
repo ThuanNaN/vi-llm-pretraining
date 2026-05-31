@@ -11,7 +11,7 @@ model:
   attn_implementation: flash_attention_2
 
 # ── Speed-ups ─────────────────────────────────────────────────────────────────
-compile: true                  # torch.compile (PyTorch 2.x)
+compile: false                 # disabled: torch.compile + FSDP causes rank-0 GIL stall → allgather timeout
 gradient_checkpointing: true
 
 # ── Data ─────────────────────────────────────────────────────────────────────
