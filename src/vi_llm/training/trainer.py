@@ -163,8 +163,8 @@ def train(config_path: str) -> None:
     dataloader = DataLoader(
         dataset,
         batch_size=train_cfg["per_device_batch_size"],
-        num_workers=0,
-        pin_memory=False,
+        num_workers=data_cfg.get("num_workers", 0),
+        pin_memory=True,
         drop_last=True,
     )
 
