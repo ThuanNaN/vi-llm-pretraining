@@ -3,10 +3,10 @@
 
 import argparse
 
-from vi_llm.data.loader import download_all
+from vi_llm.dataprep.loader import download_all
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="configs/datasets.yaml")
+    parser.add_argument("--config", default="configs/dataprep.yaml")
     args = parser.parse_args()
     download_all(args.config)

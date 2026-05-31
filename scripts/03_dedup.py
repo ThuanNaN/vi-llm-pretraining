@@ -3,13 +3,10 @@
 
 import argparse
 
-from vi_llm.data.dedup import dedup_dataset
+from vi_llm.dataprep.dedup import dedup_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-dir", default="data/cleaned")
-    parser.add_argument("--output-dir", default="data/deduped")
-    parser.add_argument("--threshold", type=float, default=0.85)
-    parser.add_argument("--num-perm", type=int, default=128)
+    parser.add_argument("--config", default="configs/dataprep.yaml")
     args = parser.parse_args()
-    dedup_dataset(args.input_dir, args.output_dir, args.threshold, args.num_perm)
+    dedup_dataset(args.config)

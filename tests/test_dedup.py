@@ -1,6 +1,13 @@
 """Unit tests for MinHash deduplication helpers."""
 
-from vi_llm.data.dedup import _make_minhash, _shingles
+from vi_llm.dataprep.dedup import _shingles
+from datasketch import MinHash
+
+def _make_minhash(text: str, num_perm: int = 128) -> MinHash:
+    m = MinHash(num_perm=num_perm)
+    for shingle in _shingles(text):
+        m.update(shingle.encode("utf-8"))
+    return m
 
 
 def test_shingles_basic():

@@ -5,7 +5,7 @@ import argparse
 
 import yaml
 
-from vi_llm.data.packer import pack_dataset
+from vi_llm.dataprep.packer import pack_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -23,4 +23,5 @@ if __name__ == "__main__":
         input_dir=args.input_dir,
         output_dir=args.output_dir,
         seq_length=args.seq_length,
+        num_workers=cfg["num_workers"],
     )

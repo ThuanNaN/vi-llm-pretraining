@@ -1,7 +1,7 @@
 """Unit tests for text cleaner (no fasttext — language_id disabled)."""
 
 import pytest
-from vi_llm.data.cleaner import CleanerConfig, TextCleaner
+from vi_llm.dataprep.cleaner import CleanerConfig, TextCleaner
 
 
 @pytest.fixture

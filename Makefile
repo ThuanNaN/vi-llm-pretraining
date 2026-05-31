@@ -1,4 +1,4 @@
-.PHONY: install install-flash install-cuda download clean-data dedup tokenizer \
+.PHONY: install install-cuda download clean-data dedup tokenizer \
         tokenize train-1b train-7b train-1b-fsdp train-7b-fsdp \
         pipeline push-tokenizer push-checkpoint test
 
@@ -11,22 +11,19 @@ CONFIGS := configs
 install:
 	uv pip install -e .
 
-install-flash:
-	uv pip install -e ".[flash]"      # CUDA only — Flash Attention 2
-
 install-cuda:
 	uv pip install -e ".[cuda]"       # Linux/CUDA only — adds DeepSpeed
 
 # ── Data pipeline ─────────────────────────────────────────────────────────────
 
 download:
-	$(PYTHON) $(SCRIPTS)/01_download.py --config $(CONFIGS)/datasets.yaml
+	$(PYTHON) $(SCRIPTS)/01_download.py --config $(CONFIGS)/dataprep.yaml
 
 clean-data:
-	$(PYTHON) $(SCRIPTS)/02_clean.py --config $(CONFIGS)/cleaning.yaml
+	$(PYTHON) $(SCRIPTS)/02_clean.py --config $(CONFIGS)/dataprep.yaml
 
 dedup:
-	$(PYTHON) $(SCRIPTS)/03_dedup.py
+	$(PYTHON) $(SCRIPTS)/03_dedup.py --config $(CONFIGS)/dataprep.yaml
 
 tokenizer:
 	$(PYTHON) $(SCRIPTS)/04_train_tokenizer.py --config $(CONFIGS)/tokenizer.yaml
@@ -52,11 +49,11 @@ train-7b:
 # Edit accelerate_config_fsdp.yaml to set num_processes = GPU count.
 
 train-1b-fsdp:
-	accelerate launch --config_file accelerate_config_fsdp.yaml \
+	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 NCCL_SOCKET_IFNAME=enp5s0 accelerate launch --config_file accelerate_config_fsdp.yaml \
 		$(SCRIPTS)/06_train.py --config $(CONFIGS)/training/1b.yaml
 
 train-7b-fsdp:
-	accelerate launch --config_file accelerate_config_fsdp.yaml \
+	NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1 NCCL_SOCKET_IFNAME=enp5s0 accelerate launch --config_file accelerate_config_fsdp.yaml \
 		$(SCRIPTS)/06_train.py --config $(CONFIGS)/training/7b.yaml
 
 # ── HF Hub ────────────────────────────────────────────────────────────────────

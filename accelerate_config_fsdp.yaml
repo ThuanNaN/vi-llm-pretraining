@@ -9,13 +9,14 @@ fsdp_config:
   fsdp_sharding_strategy: FULL_SHARD
   fsdp_state_dict_type: FULL_STATE_DICT
   fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
+  fsdp_use_orig_params: true
 machine_rank: 0
 main_process_ip: null
 main_process_port: null
 main_training_function: main
-mixed_precision: no   # handled in code — trainer.py resolves dtype per device
+mixed_precision: "no"
 num_machines: 1
-num_processes: 4      # set to GPU count (e.g. 4 for 4×A100)
+num_processes: 2
 rdzv_backend: static
 same_network: true
 use_cpu: false
