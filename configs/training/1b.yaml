@@ -11,7 +11,7 @@ model:
   attn_implementation: flash_attention_2
 
 # ── Speed-ups ─────────────────────────────────────────────────────────────────
-compile: false                 # disabled: torch.compile + FSDP causes rank-0 GIL stall → allgather timeout
+compile: true                  # safe for single-GPU (non-FSDP); disable if switching to FSDP multi-GPU
 gradient_checkpointing: true
 
 # ── Data ─────────────────────────────────────────────────────────────────────
@@ -19,6 +19,7 @@ data:
   packed_dir: data/packed
   tokenizer_dir: artifacts/tokenizer
   seq_length: 2048
+  num_workers: 4
 
 # ── Training hyperparams ─────────────────────────────────────────────────────
 training:
@@ -41,4 +42,4 @@ checkpoint:
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:
   wandb_project: vi-llm-pretrain
-  log_every_steps: 1
+  log_every_steps: 10
