@@ -9,11 +9,20 @@ download:
     #   weight: 0.1
     #   max_docs: null
 
-    - id: sepidmnorozy/Vietnamese_sentiment
-      split: train
-      text_columns: [text]
+    - id: NLP-Projects/Vietnamese-Sentiment-Analysis
+      type: text_files
+      urls:
+        - https://raw.githubusercontent.com/NLP-Projects/Vietnamese-Sentiment-Analysis/main/train_negative_tokenized.txt
+        - https://raw.githubusercontent.com/NLP-Projects/Vietnamese-Sentiment-Analysis/main/train_neutral_tokenized.txt
+        - https://raw.githubusercontent.com/NLP-Projects/Vietnamese-Sentiment-Analysis/main/train_positive_tokenized.txt
       weight: 0.1
-      max_docs: null
+      max_docs: 1000
+
+    # - id: sepidmnorozy/Vietnamese_sentiment
+    #   split: train
+    #   text_columns: [text]
+    #   weight: 0.1
+    #   max_docs: null
 
     # - id: vietgpt/wikipedia_vi
     #   split: train

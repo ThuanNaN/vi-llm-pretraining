@@ -28,7 +28,10 @@ def download_all(config_path: str) -> None:
     shard_size = cfg.get("shard_size", 10_000)
 
     for entry in cfg["datasets"]:
-        _download_dataset(entry, output_dir, shard_size, hf_datasets)
+        if entry.get("type") == "text_files":
+            _download_text_files(entry, output_dir, shard_size, hf_datasets)
+        else:
+            _download_dataset(entry, output_dir, shard_size, hf_datasets)
 
 
 def _find_parquet_files(fs, dataset_id: str, name: str | None, split: str) -> list[str]:
@@ -180,6 +183,57 @@ def _download_dataset(entry: dict, output_dir: Path, shard_size: int, hf_dataset
                     shard_idx += 1
                     buffer = []
                 pbar.set_postfix(docs=total, shards=shard_idx)
+
+    if buffer:
+        _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)
+
+    mark_done(dataset_dir)
+    num_shards = shard_idx + (1 if buffer else 0)
+    print(f"  Saved {total} documents to {dataset_dir}  ({num_shards} shards)")
+
+
+def _download_text_files(entry: dict, output_dir: Path, shard_size: int, hf_datasets) -> None:
+    """Download plain-text files (one document per line) from HTTP/S URLs."""
+    import urllib.request
+
+    from tqdm import tqdm
+
+    dataset_id = entry["id"]
+    urls: list[str] = entry["urls"]
+    max_docs = entry.get("max_docs")
+
+    safe_name = dataset_id.replace("/", "__")
+    dataset_dir = output_dir / safe_name
+    if is_done(dataset_dir):
+        print(f"Skipping {dataset_id} — already downloaded at {dataset_dir}")
+        return
+
+    print(f"Downloading {dataset_id} ({len(urls)} text file(s)) ...")
+
+    shard_idx = 0
+    buffer: list[str] = []
+    total = 0
+    done = False
+
+    for url in tqdm(urls, desc=f"  Files [{dataset_id}]", unit="file"):
+        if done:
+            break
+        with urllib.request.urlopen(url) as resp:
+            for raw_line in resp:
+                if done:
+                    break
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line:
+                    continue
+                if max_docs is not None and total >= max_docs:
+                    done = True
+                    break
+                buffer.append(line)
+                total += 1
+                if len(buffer) >= shard_size:
+                    _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)
+                    shard_idx += 1
+                    buffer = []
 
     if buffer:
         _flush_shard(buffer, dataset_dir, shard_idx, hf_datasets)

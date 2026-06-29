@@ -1,6 +1,6 @@
 .PHONY: install install-cuda download clean-data dedup tokenizer \
         tokenize train-1b train-7b train-1b-fsdp train-7b-fsdp \
-        pipeline push-tokenizer push-checkpoint test
+        pipeline push-tokenizer push-checkpoint test train-smoke infer
 
 PYTHON  := python
 SCRIPTS := scripts
@@ -63,6 +63,26 @@ push-tokenizer:
 
 push-checkpoint:
 	$(PYTHON) -c "from vi_llm.training.callbacks import push_checkpoint_to_hub; push_checkpoint_to_hub()"
+
+# ── Smoke test (1000 docs, 100 train steps) ───────────────────────────────────
+
+train-smoke:
+	accelerate launch --config_file accelerate_config.yaml \
+		$(SCRIPTS)/06_train.py --config $(CONFIGS)/training/1b-smoke.yaml
+
+# ── Inference ─────────────────────────────────────────────────────────────────
+# Override PROMPT and CHECKPOINT on the command line:
+#   make infer PROMPT="Điện thoại này" CHECKPOINT=artifacts/checkpoints/1b-smoke/step_0000100
+
+PROMPT     ?= Điện thoại này
+CHECKPOINT ?=
+INFER_CONFIG ?= $(CONFIGS)/training/1b-smoke.yaml
+
+infer:
+	$(PYTHON) $(SCRIPTS)/07_infer.py \
+		--config $(INFER_CONFIG) \
+		$(if $(CHECKPOINT),--checkpoint $(CHECKPOINT),) \
+		--prompt "$(PROMPT)"
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
 
